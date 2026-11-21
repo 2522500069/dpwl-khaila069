@@ -1,20 +1,17 @@
 <?php
 class LoginPlg_M extends Model
 {
-    function DataPlg($email)
-    {
-        $email = $this->db->real_escape_string($email);
-        $hasil = $this->db->query("SELECT * FROM penyewa");
-        if (!$hasil) {
-            die("Query gagal: " . $this->db->error);
-        }
-        while ($row = $hasil->fetch_assoc()) {
-            foreach ($row as $isi) {
-                if ($isi == $email) {
-                    return $row;
-                }
-            }
-        }
-        return null;
-    }
+ function DataPlg($user_plg069)
+{
+    $sql = $this->db->prepare("
+        SELECT user_plg069, sandi069, nm_lngkp069
+        FROM penyewa
+        WHERE user_plg069 = ?
+    ");
+
+    $sql->bind_param("s", $user_plg069);
+    $sql->execute();
+
+    return $sql->get_result()->fetch_assoc();
+}
 }
