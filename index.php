@@ -1,52 +1,83 @@
 <?php
+// TAMBAHAN KAYLA
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// TAMBAHAN KAYLA
+if(session_status() == PHP_SESSION_NONE){
+  session_start();
+}
+
+// TAMBAHAN KAYLA
+// Versi pendek biar tidak kepotong
+if(!defined('baseurl')){
+  define('baseurl', 'http://localhost/dpwl-khaila069/');
+}
+
 require_once 'config/autoload.php';
 require_once 'config/routes.php';
 require_once 'config/config.php';
 require_once 'helper/url_helper.php';
 
-$url = $_GET['url'] ?? $route['default_controller'] . '/index';
-if ($url == '') {
-    $url = $route['default_controller']. '/index';
+// PERBAIKAN KAYLA
+// Kalau file ini tidak ada, jangan dipaksa
+if(file_exists('config/session.php')){
+  require_once 'config/session.php';
+}
+
+// Ambil URL dari ?url= ATAU dari /index.php/shopping/detail/...
+if(!empty($_GET['url'])){
+  $url = $_GET['url'];
+} elseif(!empty($_SERVER['PATH_INFO'])){
+  $url = trim($_SERVER['PATH_INFO'], '/');
+} else {
+  $url = $route['default_controller'] . '/index';
 }
 
 $url = trim($url, '/');
 $segment = explode('/', $url);
 
-if (isset($segment[0]) && strtolower($segment[0]) == 'c_master') {
-    $folder = $segment[0];
-    $controller = $segment[1] ?? $route['default_controller'];
-    $method = $segment[2] ?? 'index';
-    $parameter = $segment[3] ?? null;
-
-    // Cuma ini aja pengamannya: huruf pertama dibesarin
-    // penyewa_C069 -> Penyewa_C069
-    $controllerName = ucfirst($controller);
-    $controllerFile = 'controller/'.$folder.'/'.$controllerName.'.php';
+// CEK APAKAH URL PAKE FOLDER (c_master/Mobil_C/index) ATAU ENGGAK (Login_C/index)
+if(count($segment) >= 2 && is_dir('controller/' . $segment[0])){
+  // ADA FOLDER MISAL: c_master/Mobil_C/index
+  $folder = $segment[0];
+  $controller = $segment[1] ?? $route['default_controller'];
+  $method = $segment[2] ?? 'index';
+  $parameter = $segment[3] ?? null;
+  $controllerFile = 'controller/' . $folder . '/' . $controller . '.php';
+  $controllerName = $controller;
 } else {
-    $controller = $segment[0] ?? $route['default_controller'];
-    $method = $segment[1] ?? 'index';
-    $parameter = $segment[2] ?? null;
+  // GAK ADA FOLDER MISAL: Login_C/index
+  $controller = $segment[0] ?? $route['default_controller'];
+  $method = $segment[1] ?? 'index';
+  $parameter = $segment[2] ?? null;
+
+  if(strtolower($controller) === 'login_c'){
+    $controllerName = 'Login_C';
+  } else {
     $controllerName = ucfirst($controller);
-    if (file_exists('controller/'.$controllerName.'.php')) {
-        $controllerFile = 'controller/'.$controllerName.'.php';
-    } else {
-        $controllerFile = 'controller/c_master/'.$controllerName.'.php';
-    }
+  }
+  $controllerFile = 'controller/' . $controllerName . '.php';
 }
 
-if (file_exists($controllerFile)) {
-    require_once $controllerFile;
-    $objController = new $controllerName();
-    if (method_exists($objController, $method)) {
-        if ($parameter !== null) {
-            $objController->$method($parameter);
-        } else {
-            $objController->$method();
-        }
+if(file_exists($controllerFile)){
+  require_once $controllerFile;
+  $objController = new $controllerName();
+  if(method_exists($objController, $method)){
+    if($parameter !== null){
+      $objController->$method(urldecode($parameter));
     } else {
-        echo "Method $method tidak ditemukan di $controllerName.";
+      $objController->$method();
     }
+  } else {
+    echo "Method tidak ditemukan di ";
+    echo $controllerName;
+  }
 } else {
-    echo "Controller tidak ditemukan: $controllerFile";
+  echo "Controller tidak ditemukan: ";
+  echo $controllerFile;
+  echo " - URL kamu: ";
+  echo $url;
 }
 ?>
